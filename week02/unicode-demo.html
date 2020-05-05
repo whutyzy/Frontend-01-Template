@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>unicode</title>
+    </head>
+    <body></body>
+    <script>
+        for (let i = 0; i <= 128; i++) {
+            document.write(
+                "<span style='background-color: bisque;'>" +
+                    String.fromCharCode(i) +
+                    '</span></br>'
+            )
+        }
+
+        var a = 0.1
+        var b = 0.2
+        const memory = new Float64Array(1)
+
+        memory[0] = a
+        const intarr = new Uint8Array(memory.buffer)
+
+        console.log(intarr)
+    </script>
+</html>
