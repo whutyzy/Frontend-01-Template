@@ -10,3 +10,7 @@
 + 物理层
 
 HTTP主要实现了应用/表示/会话层，对应的node.js中`require(http)`,TCP层对应的`require(net)`
+
+#### 基础知识
++ 端口：标识应用
++ 
