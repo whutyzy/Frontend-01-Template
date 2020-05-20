@@ -3,9 +3,52 @@ const EOF = Symbol('EOF')
 
 let currentToken = null
 let currentAttribute = null
+let stack = [{ type: 'document', children: [] }]
 
 function emit(token) {
-    console.log(token)
+    
+    if (token.type === 'text') {
+        return
+    }
+    let top = stack[stack.length - 1]
+    if (token.type === 'startTag') {
+        let element = {
+            type: 'element',
+            children: [],
+            attributes: [],
+        }
+        element.tagName = token.tagName
+        for (let p in token) {
+            if (p != 'type' && p != 'tagName') {
+                element.attributes.push({
+                    name: p,
+                    value: token[p],
+                })
+            }
+        }
+        top.children.push(element)
+        element.parent = top
+        if (!token.isSelfClosing) {
+            stack.push(element)
+        }
+        currentTextNode = null
+    } else if (token.type == 'endTag') {
+        if (top.tagName != token.tagName) {
+            throw new Error("tag start end doesn't match")
+        } else {
+            stack.pop()
+        }
+        currentTextNode = null
+    } else if (token.type === 'text') {
+        if (currentTextNode == null) {
+            currentTextNode = {
+                type: 'text',
+                content: '',
+            }
+            top.children.push(currentTextNode)
+        }
+        currentTextNode.content += token.content
+    }
 }
 
 function data(c) {
@@ -41,7 +84,7 @@ function tagOpen(s) {
 }
 
 function tagName(c) {
-    if (c.match(/^[\t\n\f]$/)) {
+    if (c.match(/^[\t\n\f ]$/)) {
         return beforeAttributeName
     } else if (c === '/') {
         return selfClosingStartTag
@@ -73,7 +116,7 @@ function beforeAttributeName(c) {
 }
 
 function attributeName(c) {
-    if (c.match(/^[\t\n\f]$/ || c == '>' || c == '/' || c == EOF)) {
+    if (c.match(/^[\t\n\f] $/ || c == '>' || c == '/' || c == EOF)) {
         return afterAttributeName(c)
     } else if (c == '=') {
         return beforeAttributeValue
@@ -137,19 +180,17 @@ function singleQuotedAttributeValue(c) {
 }
 
 function afterQuotedAttributeValue(c) {
-    if (c.match(/^[\t\n\f]$/) ) {
+    if (c.match(/^[\t\n\f]$/)) {
         return beforeAttributeName
     } else if (c == '/') {
         return selfClosingStartTag
-    } else if (c == ">") {
+    } else if (c == '>') {
         currentToken[currentAttribute.name] = currentAttribute.value
         emit(currentToken)
         return data
-    } else if (c==EOF) {
-        
-    }
-    else {
-        currentAttribute.value +=c
+    } else if (c == EOF) {
+    } else {
+        currentAttribute.value += c
         return afterQuotedAttributeValue
     }
 }
@@ -158,7 +199,7 @@ function unquotedAttributeValue(c) {
     if (c.match(/^[\t\n\f]$/)) {
         currentToken[currentAttribute.name] = currentAttribute.value
         return beforeAttributeName
-    } else if (c == "/") {
+    } else if (c == '/') {
         currentToken[currentAttribute.name] = currentAttribute.value
         return selfClosingStartTag
     } else if (c == '>') {
@@ -166,11 +207,8 @@ function unquotedAttributeValue(c) {
         emit(currentToken)
         return data
     } else if (c == EOF) {
-        
-    }else if (c == '"'||c=='\''||c=="<"||c=="="||c=='`') {
-
-    }
-    else {
+    } else if (c == '"' || c == "'" || c == '<' || c == '=' || c == '`') {
+    } else {
         currentAttribute.value += c
         return unquotedAttributeValue
     }
@@ -207,11 +245,9 @@ function endTagOpen(c) {
     }
 }
 
-function afterAttributeName(c) {}
-
 const html = `<head>
 <body>
-<input/>
+<input class='input-inner' disabled />   
 <div class='container'>  </div>
 <body>       
 <head>`
