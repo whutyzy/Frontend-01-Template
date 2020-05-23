@@ -4,12 +4,9 @@ const EOF = Symbol('EOF')
 let currentToken = null
 let currentAttribute = null
 let stack = [{ type: 'document', children: [] }]
+let currentTextNode = null
 
 function emit(token) {
-    
-    if (token.type === 'text') {
-        return
-    }
     let top = stack[stack.length - 1]
     if (token.type === 'startTag') {
         let element = {
@@ -56,7 +53,7 @@ function data(c) {
         return tagOpen
     } else if (c === EOF) {
         emit({
-            type: 'EOF',
+            type: EOF,
         })
         return
     } else {
@@ -245,11 +242,12 @@ function endTagOpen(c) {
     }
 }
 
-const html = `<head>
+const html = `<head></head>
 <body>
 <input class='input-inner' disabled />   
 <div class='container'>  </div>
-<body>       
-<head>`
+</body>       
+`
 
 parseHTML(html)
+console.log(stack)
