@@ -1,10 +1,109 @@
+
 const EOF = Symbol('EOF')
 // EOF:end of line
-
 let currentToken = null
 let currentAttribute = null
 let stack = [{ type: 'document', children: [] }]
 let currentTextNode = null
+let rules = []
+
+function addCSSRules(text) {
+    let ast = css.parse(text)
+
+    rules.push(...ast.stylesheet.rules)
+}
+
+function match(element, selector) {
+    if (!selector || !element.attributes) {
+        return false
+    }
+    if (selector.charAt(0) == "#") {
+        let attr = element.attributes.filter(attr => attr.name === 'id')[0]
+        if (attr && attr.value === selector.replace('#', ''))
+            return true
+    }
+    if (selector.charAt(0) == '.') {
+        let attr = element.attributes.filter((attr) => attr.name === 'class')[0]
+        if (attr && attr.value === selector.replace('.', ''))
+            return true
+    } else {
+        if (element.tagName === selector) {
+            return true
+        }
+    }
+    return false
+
+}
+
+function specificity(selector) {
+    var p = [0, 0, 0, 0]
+    var selectorParts = selector.split(" ")
+    for (let part of selectorParts) {
+        if (part.charAt(0) == "#") {
+            p[1] += 1 
+        } else if (part.charAt(0) == '.') {
+            p[2] += 1 
+        } else {
+            p[3] += 1 
+        }
+    }
+    return p
+}
+
+function compart(sp1,sp2) {
+    if (sp1[0] - sp1[0])
+        return sp1[0] - sp1[0]
+    if (sp1[1] - sp1[1]) return sp1[1] - sp1[1]
+    if (sp1[2] - sp1[2]) return sp1[2] - sp1[2]
+    return sp[3] - sp[3]
+}
+
+function computeCSS(element) {
+    // 找到所有的父元素
+    let elements = stack.reverse.slice()
+    if (!element.computedStyle) {
+        element.computedStyle = {}
+    }
+    for (let rule of rules) {
+        let selectorParts = rule.selectors[0].split(" ").reverse()
+        if (!match(element, selectorParts[0])) {
+            continue
+        }
+        let matched = false
+        let j = 1
+        for (var i = 0; i < elements.length; i++){
+            if (match(elements[i], selectorParts[j])) {
+                j++    
+            }
+        }
+        if (j >= selectorParts.length) {
+            matched = true
+        }
+        if (matched) {
+            let computedStyle = element.computedStyle
+            let sp = specificity(rule.selectors[0])
+            for (let declartion of rule.declartions) {
+                if (!computedStyle[declartion.property]) {
+                    computedStyle[declartion.property] = {}
+                }
+                if (!computedStyle[declartion.property].specificity) {
+                    computedStyle[declartion.property].specificity = sp
+                    computedStyle[declartion.property].value = declartion.value
+                } else if (
+                           compare(
+                               computedStyle[declartion.property].specificity
+                           ,sp) < 0
+                ) {
+                    computedStyle[declartion.property].value = declartion.value
+                    computedStyle[declartion.property].specificity =sp
+                       }
+                
+            }
+
+        }
+    }
+}
+
 
 function emit(token) {
     let top = stack[stack.length - 1]
@@ -23,6 +122,7 @@ function emit(token) {
                 })
             }
         }
+        computeCSS(element)
         top.children.push(element)
         element.parent = top
         if (!token.isSelfClosing) {
@@ -33,6 +133,9 @@ function emit(token) {
         if (top.tagName != token.tagName) {
             throw new Error("tag start end doesn't match")
         } else {
+            if (top.tagName === 'style') {
+                addCSSRules(top.children[0].content)
+            }
             stack.pop()
         }
         currentTextNode = null
@@ -242,11 +345,24 @@ function endTagOpen(c) {
     }
 }
 
-const html = `<head></head>
+const html = `
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>toy-browser</title>
+    <style>
+        body #app .container{
+            background-color: #fff;
+        }
+    </style>
+</head>
 <body>
-<input class='input-inner' disabled />   
-<div class='container'>  </div>
-</body>       
+    <div id="app">
+        <div class="layout"></div>
+    </div>
+</body>
+</html>    
 `
 
 parseHTML(html)

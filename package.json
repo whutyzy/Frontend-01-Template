@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "学习总结",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "css": "^2.2.4"
+  },
   "devDependencies": {
     "@babel/core": "^7.9.6",
     "@babel/preset-env": "^7.9.6",
