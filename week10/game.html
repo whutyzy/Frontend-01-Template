@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <style>
+            .container {
+                width: 600px;
+                height: 600px;
+            }
+            .row {
+                display: flex;
+            }
+            .box {
+                width: 200px;
+                height: 200px;
+                text-align: center;
+                line-height: 200px;
+                font-size: 40px;
+                background-color: green;
+                border: 1px solid #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <div class="container">
+                <div class="row" v-for="(row,i) in patten" :key="i">
+                    <div
+                        v-for="(cell,j) in row"
+                        :key="j"
+                        @click="play(i,j)"
+                        class="box"
+                    >
+                        {{cell===2?'x': cell===1?'o':''}}
+                    </div>
+                </div>
+            </div>
+            <p>{{tip}}</p>
+        </div>
+    </body>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                patten: [
+                    [0, 0, 0],
+                    [0, 0, 0],
+                    [0, 0, 0],
+                ],
+                color: 1,
+                tip: '',
+            },
+            methods: {
+                play(i, j) {
+                    this.patten[i].splice(j, 1, this.color)
+                    if (this.check(this.patten,this.color)) {
+                        const icon =
+                            this.color === 2 ? 'x' : this.color === 1 ? 'o' : ''
+                        this.tip = `winner is ${icon}`
+                    }
+                    this.color = 3 - this.color
+                    if (this.willWin(this.patten,this.color)) {
+                        const icon =
+                            this.color === 2 ? 'x' : this.color === 1 ? 'o' : ''
+                        console.log(`${icon} will win`)
+                    }
+                },
+                clone(source) {
+                    return JSON.parse(JSON.stringify(source))
+                },
+                willWin(originPatten,color) {
+                    for (let i = 0; i < 3; i++) {
+                        for (let j = 0; j < 3; j++) {
+                            if (originPatten[i][j]) continue
+                            const patten = this.clone(originPatten)
+                            patten[i][j] = this.color
+                            if (this.check(patten, color)) {
+                                const icon =
+                                    color === 2
+                                        ? 'x'
+                                        : this.color === 1
+                                        ? 'o'
+                                        : ''
+                                console.log(icon + 'will wiin')
+                                return [j,i]
+                            }
+                        }
+                    }
+                    return false
+                },
+                bestChoice(patten,color){
+                    let result = -1
+                    let point = this.willWin(patten,color)
+                    if(point){
+                        return {
+                            result:-1,
+                            point:point
+                        }
+                    }
+                     for (let i = 0; i < 3; i++) {
+                        for (let j = 0; j < 3; j++) {
+                            if (patten[i][j]) continue
+                            const clonePatten = this.clone(originPatten)
+                            clonePatten[i][j] = this.color
+                            let oop = this.bestChoice(clonePatten,3-color)
+                            if(-oop.result >= result){
+                                point = [j,i]
+                                result = -oop.result
+                            }
+                        }
+                    }
+                    
+                    return {
+                        point:point,
+                        result:point?result:0
+                    }
+                },
+                check(patten,color) {
+                    // 横轴
+                    for (let i = 0; i < 3; i++) {
+                        let win = true
+                        for (let j = 0; j < 3; j++) {
+                            if (patten[i][j] !== color) {
+                                win = false
+                                break
+                            }
+                        }
+
+                        if (win) {
+                            return true
+                        }
+                    }
+
+                    // 纵轴
+                    for (let i = 0; i < 3; i++) {
+                        let win = true
+                        for (let j = 0; j < 3; j++) {
+                            if (patten[j][i] !== color) {
+                                win = false
+                                break
+                            }
+                        }
+                        if (win) {
+                            return true
+                        }
+                    }
+                    //斜向
+                    {
+                        let win = true
+                        for (let i = 0; i < 3; i++) {
+                            if (patten[i][i] !== color) {
+                                win = false
+                                break
+                            }
+                        }
+                        if (win) {
+                            return true
+                        }
+                    }
+                    {
+                        let win = true
+                        for (let i = 0; i < 3; i++) {
+                            if (patten[2 - i][i] !== color) {
+                                win = false
+                                break
+                            }
+                        }
+                        if (win) {
+                            return true
+                        }
+                    }
+                    return false
+                },
+            },
+        })
+    </script>
+</html>
