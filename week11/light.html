@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <style>
+            div {
+                display: inline-block;
+                width: 100px;
+                height: 100px;
+                margin: 100px;
+                border-radius: 50%;
+                background-color: gray;
+            }
+            .green.light {
+                background-color: green;
+            }
+            .red.light {
+                background-color: red;
+            }
+            .yellow.light {
+                background-color: yellow;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="green"></div>
+        <div class="yellow"></div>
+        <div class="red"></div>
+        <button id="next">next</button>
+    </body>
+    <script>
+        function green() {
+            const boxs = document.getElementsByTagName('div')
+            for (let i = 0; i < boxs.length; i++)
+                boxs[i].classList.remove('light')
+            document.getElementsByClassName('green')[0].classList.add('light')
+        }
+        function yellow() {
+            const boxs = document.getElementsByTagName('div')
+            for (let i = 0; i < boxs.length; i++)
+                boxs[i].classList.remove('light')
+            document.getElementsByClassName('yellow')[0].classList.add('light')
+        }
+        function red() {
+            const boxs = document.getElementsByTagName('div')
+            for (let i = 0; i < boxs.length; i++)
+                boxs[i].classList.remove('light')
+            document.getElementsByClassName('red')[0].classList.add('light')
+        }
+
+        function happen() {
+            return new Promise((resolve) => {
+                const button = document.getElementById('next')
+                button.addEventListener('click', resolve, { once: true })
+            })
+        }
+
+        function sleep(time) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve()
+                }, time * 1000)
+            })
+        }
+
+        function* run() {
+            while (true) {
+                green()
+                yield sleep(3)
+                yellow()
+                yield sleep(2)
+                red()
+                yield sleep(1)
+            }
+        }
+
+        function runIterator(iterator) {
+            let { value, done } = iterator.next()
+            if (done) return
+            if (value instanceof Promise) {
+                value.then(() => {
+                    runIterator(iterator)
+                })
+            }
+        }
+
+        function co(generator) {
+            return function () {
+                runIterator(generator())
+            }
+        }
+        run = co(run)
+        run()
+    </script>
+</html>
+
+
