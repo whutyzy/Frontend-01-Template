@@ -42,6 +42,23 @@
     </body>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <script>
+        let openings = new Map()
+        openings.set(
+            [
+                [0, 0, 0],
+                [0, 0, 0],
+                [0, 0, 0],
+            ].toString() + '1',
+            { point: [1, 1], result: 0 }
+        )
+        openings.set(
+            [
+                [0, 0, 0],
+                [0, 1, 0],
+                [0, 0, 0],
+            ].toString() + '2',
+            { point: [0, 0], result: 0 }
+        )
         var app = new Vue({
             el: '#app',
             data: {
@@ -56,22 +73,33 @@
             methods: {
                 play(i, j) {
                     this.patten[i].splice(j, 1, this.color)
-                    if (this.check(this.patten,this.color)) {
+                    if (this.check(this.patten, this.color)) {
                         const icon =
                             this.color === 2 ? 'x' : this.color === 1 ? 'o' : ''
                         this.tip = `winner is ${icon}`
                     }
                     this.color = 3 - this.color
-                    if (this.willWin(this.patten,this.color)) {
+                    this.computerPlay(this.patten, this.color)
+                },
+                computerPlay(patten, color) {
+                    const choice = this.bestChoice(patten, color)
+                    if (choice.point)
+                        this.patten[choice.point[1]].splice(
+                            choice.point[0],
+                            1,
+                            this.color
+                        )
+                    if (this.check(patten, color)) {
                         const icon =
                             this.color === 2 ? 'x' : this.color === 1 ? 'o' : ''
-                        console.log(`${icon} will win`)
+                        this.tip = `winner is ${icon}`
                     }
+                    this.color = 3 - this.color
                 },
                 clone(source) {
                     return JSON.parse(JSON.stringify(source))
                 },
-                willWin(originPatten,color) {
+                willWin(originPatten, color) {
                     for (let i = 0; i < 3; i++) {
                         for (let j = 0; j < 3; j++) {
                             if (originPatten[i][j]) continue
@@ -85,40 +113,46 @@
                                         ? 'o'
                                         : ''
                                 console.log(icon + 'will wiin')
-                                return [j,i]
+                                return [j, i]
                             }
                         }
                     }
                     return false
                 },
-                bestChoice(patten,color){
+                bestChoice(patten, color) {
+                    if (openings.has(patten.toString() + color)) {
+                        return openings.get(patten.toString() + color)
+                    }
                     let result = -1
-                    let point = this.willWin(patten,color)
-                    if(point){
+                    let point = this.willWin(patten, color)
+                    if (point) {
                         return {
-                            result:-1,
-                            point:point
+                            result: 1,
+                            point: point,
                         }
                     }
-                     for (let i = 0; i < 3; i++) {
+                    outer: for (let i = 0; i < 3; i++) {
                         for (let j = 0; j < 3; j++) {
                             if (patten[i][j]) continue
-                            const clonePatten = this.clone(originPatten)
-                            clonePatten[i][j] = this.color
-                            let oop = this.bestChoice(clonePatten,3-color)
-                            if(-oop.result >= result){
-                                point = [j,i]
+                            const clonePatten = this.clone(patten)
+                            clonePatten[i][j] = color
+                            let oop = this.bestChoice(clonePatten, 3 - color)
+                            if (-oop.result >= result) {
+                                point = [j, i]
                                 result = -oop.result
+                            }
+                            if (result === 1) {
+                                break outer
                             }
                         }
                     }
-                    
+
                     return {
-                        point:point,
-                        result:point?result:0
+                        point: point,
+                        result: point ? result : 0,
                     }
                 },
-                check(patten,color) {
+                check(patten, color) {
                     // 横轴
                     for (let i = 0; i < 3; i++) {
                         let win = true
