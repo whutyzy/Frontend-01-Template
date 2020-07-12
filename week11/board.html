@@ -70,29 +70,111 @@ function sleep(time) {
     })
 }
 
+function clone(source) {
+
+    return JSON.parse(JSON.stringify(source))
+
+}
+
+class BinaryHeap {
+    constructor(stack, compare) {
+        this.stack = stack
+        this.compare = compare
+    }
+
+    take() {
+        if (!this.stack.length)
+            return
+        const stack = this.stack
+        let min = stack[0]
+        let i = 0
+        while (i < stack.length) {
+            if (2 * i + 1 >= stack.length) {
+                break
+            }
+            if (2 * i + 2 >= stack.length) {
+                this.stack[i] =  clone(this.stack[i*2 + 1])
+                i = i * 2 + 1
+                break
+            }
+
+            if (this.compare(stack[2 * i + 1], stack[2 * i + 2]) < 0) {
+                this.stack[i] = clone(this.stack[2 * i + 1])
+                i = 2 * i + 1
+            } else {
+                this.stack[i] = clone(this.stack[2 * i + 2])
+                i = 2 * i + 2
+            }
+        }
+
+        if (i < this.stack.length - 1)
+            this.insertAt(i,this.stack.pop())
+        else
+            this.stack.pop()
+        return min
+    }
+
+    insertAt(pos,item) {
+        this.stack[pos] = item
+        while (pos > 0 && this.compare( item,this.stack[Math.floor((pos - 1) / 2)]) <  0) {
+            this.stack[pos] = clone(this.stack[Math.floor((pos - 1) / 2)])
+            this.stack[Math.floor((pos - 1) / 2)] = clone(item)
+            pos = Math.floor((pos - 1) / 2)
+        }
+
+
+    }
+
+    insert(item) {
+        this.insertAt(this.stack.length ,item)
+    }
+
+    get length() {
+        return this.stack.length
+    }
+}
+
+
+let binary = new BinaryHeap([0,2,4,6,3,5],(a,b)=>a-b)
+
+binary.take()
+
+
+
 async function findPath(start, end) {
 
-    const queen = [start]
+    function distance([x, y]) {
+        return (x - end[0]) ** 2 + (y - end[1]) ** 2
+    }
+
+    const collection = new BinaryHeap([start], (item1, item2) => distance(item1) - distance(item2))
+
     const _map = map.slice()
 
     async function insert([x, y], pre) {
-        if (_map[y * 100 + x]) return
-        if (x < 0 || x >= 100 || y < 0 || y >= 100) return
-        _map[y * 100 + x] = pre
-        container.children[y * 100 + x].style.backgroundColor = 'lightgreen'
-        await sleep(2)
-        queen.push([x, y])
+        try {
+            if (_map[y * 100 + x]) return
+            if (x < 0 || x >= 100 || y < 0 || y >= 100) return
+            _map[y * 100 + x] = pre
+            container.children[y * 100 + x].style.backgroundColor = 'lightgreen'
+            await sleep(5)
+            collection.insert([x, y])
+        } catch (e) {
+            console.log(e)
+        }
+
     }
 
-    while (queen.length) {
-        let [x, y] = queen.shift()
+    while (collection.length) {
+        let [x, y] = collection.take()
         if (x === end[0] && y === end[1]) {
+
             let path = []
             while (x !== start[0] || y !== start[1]) {
-                    [x, y] = _map[y * 100 + x]
-                container.children[y * 100 + x].style.backgroundColor = 'pink'
                 path.push([x, y])
-                console.log(path)
+                container.children[y * 100 + x].style.backgroundColor = 'pink';
+                [x, y] = _map[y * 100 + x]
+
             }
             return path
         }
@@ -100,7 +182,8 @@ async function findPath(start, end) {
         await insert([x + 1, y], [x, y])
         await insert([x, y - 1], [x, y])
         await insert([x, y + 1], [x, y])
-
+        await insert([x + 1, y + 1], [x, y])
+        await insert([x - 1, y - 1], [x, y])
 
     }
     return null
